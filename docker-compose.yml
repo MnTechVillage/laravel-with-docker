@@ -1,0 +1,64 @@
+version: "3.8"
+services:
+    php:
+        build:
+            context: .
+            target: php
+            args:
+                - APP_ENV=${APP_ENV}
+        container_name: "test_laravel"
+        environment:
+            - APP_ENV=${APP_ENV}
+            - CONTAINER_ROLE=app
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+        ports:
+            - 8000:8000
+        depends_on:
+            - database
+            - redis
+        networks:
+            - laravel_network
+
+    database:
+        image: mysql
+        restart: always
+        ports:
+            - '3307:3307'
+        volumes:
+            - db-data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=example
+            - MYSQL_DATABASE=test_notification_db
+            - MYSQL_USER=test123
+            - MYSQL_PASSWORD=123456
+            - MYSQL_TCP_PORT=3307
+        networks:
+            - laravel_network
+
+    redis:
+        image: redis:alpine
+        command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD}"
+        ports:
+            - 6379:6379
+        networks:
+            - laravel_network
+
+    node:
+        build:
+            context: .
+            target: node
+        volumes:
+            - .:/usr/src
+            - ./node_modules:/usr/src/node_modules
+        tty: true
+        networks:
+            - laravel_network
+
+volumes:
+    db-data:
+
+networks:
+    laravel_network:
+        driver: bridge
